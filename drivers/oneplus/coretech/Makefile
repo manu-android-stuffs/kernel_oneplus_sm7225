@@ -29,6 +29,10 @@ obj-$(CONFIG_IM) += im/
 obj-$(CONFIG_PCCORE) += pccore/
 obj-$(CONFIG_VM_FRAGMENT_MONITOR) += vm_fragment_monitor/
 obj-$(CONFIG_UXCHAIN) += uxchain/
+<<<<<<< HEAD
+=======
+obj-$(CONFIG_TPD) += tpd/
+>>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 obj-$(CONFIG_TPP) += tpp/
 obj-$(CONFIG_MEMEX_STANDALONE) += memex_standalone_support/core/
 obj-$(CONFIG_RATP) += ratp/

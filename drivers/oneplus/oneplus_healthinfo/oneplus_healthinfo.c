@@ -1610,7 +1610,11 @@ static const struct file_operations proc_runtime_overload_fops = {
 static struct proc_dir_entry *oneplus_healthinfo;
 
 #ifdef CONFIG_ONEPLUS_TASKLOAD_INFO
+<<<<<<< HEAD
 static void adjust_window(struct timer_list * timer) {
+=======
+static void adjust_window() {
+>>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 	sample_window.timestamp = jiffies_64;
 	sample_window.window_index++;
 	mod_timer(&task_load_info_timer, jiffies + ohm_sample_time*HZ);  /* 5s */

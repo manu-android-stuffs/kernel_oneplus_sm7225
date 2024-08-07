@@ -55,9 +55,6 @@
 
 #include "../fingerprint_detect/fingerprint_detect.h"
 
-#define NETLINK_TEST 25
-#define MAX_MSGSIZE 32
-
 #define VER_MAJOR   1
 #define VER_MINOR   2
 #define PATCH_LEVEL 8
@@ -350,6 +347,7 @@ static inline void gf_disable_irq(struct gf_dev *gf_dev)
 static inline irqreturn_t gf_irq(int irq, void *handle)
 {
 	char msg = GF_NET_EVENT_IRQ;
+	//wake_lock_timeout(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
 	__pm_wakeup_event(fp_wakelock, WAKELOCK_HOLD_TIME);
 	sendnlmsg(&msg);
 	return IRQ_HANDLED;
@@ -573,11 +571,11 @@ int opticalfp_irq_handler(struct fp_underscreen_info *tp_info)
 	fp_tpinfo = *tp_info;
 
 	if (fp_tpinfo.touch_state == 1) {
-		pr_err("TOUCH DOWN, fp_tpinfo.x = %d, fp_tpinfo.y = %d\n", fp_tpinfo.x, fp_tpinfo.y);
+		pr_err("TOUCH DOWN, fp_tpinfo.x = %d, fp_tpinfo.y = %d \n", fp_tpinfo.x, fp_tpinfo.y);
 		fp_tpinfo.touch_state = GF_NET_EVENT_TP_TOUCHDOWN;
 		sendnlmsg_tp(&fp_tpinfo, sizeof(fp_tpinfo));
 	} else if (fp_tpinfo.touch_state == 0) {
-		pr_err("TOUCH UP, fp_tpinfo.x = %d, fp_tpinfo.y = %d\n", fp_tpinfo.x, fp_tpinfo.y);
+		pr_err("TOUCH UP, fp_tpinfo.x = %d, fp_tpinfo.y = %d \n", fp_tpinfo.x, fp_tpinfo.y);
 		fp_tpinfo.touch_state = GF_NET_EVENT_TP_TOUCHUP;
 		sendnlmsg_tp(&fp_tpinfo, sizeof(fp_tpinfo));
 	}
@@ -609,6 +607,62 @@ int gf_opticalfp_irq_handler(int event)
 }
 EXPORT_SYMBOL(gf_opticalfp_irq_handler);
 
+#if defined(CONFIG_FB)
+static int goodix_fb_state_chg_callback(struct notifier_block *nb,
+		unsigned long val, void *data)
+{
+	struct gf_dev *gf_dev;
+	struct fb_event *evdata = data;
+	unsigned int blank;
+	char msg = 0;
+
+	if (val != FB_EARLY_EVENT_BLANK)
+		return 0;
+	pr_debug("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
+			__func__, (int)val);
+	gf_dev = container_of(nb, struct gf_dev, notifier);
+
+	if (evdata && evdata->data && val == FB_EARLY_EVENT_BLANK && gf_dev) {
+		blank = *(int *)(evdata->data);
+		switch (blank) {
+		case FB_BLANK_POWERDOWN:
+			if (gf_dev->device_available == 1) {
+				gf_dev->fb_black = 1;
+#if defined(GF_NETLINK_ENABLE)
+				msg = GF_NET_EVENT_FB_BLACK;
+				sendnlmsg(&msg);
+#elif defined (GF_FASYNC)
+				if (gf_dev->async) {
+					kill_fasync(&gf_dev->async, SIGIO, POLL_IN);
+				}
+#endif
+			}
+			break;
+		case FB_BLANK_UNBLANK:
+			if (gf_dev->device_available == 1) {
+				gf_dev->fb_black = 0;
+#if defined(GF_NETLINK_ENABLE)
+				msg = GF_NET_EVENT_FB_UNBLACK;
+				sendnlmsg(&msg);
+#elif defined (GF_FASYNC)
+				if (gf_dev->async) {
+					kill_fasync(&gf_dev->async, SIGIO, POLL_IN);
+				}
+#endif
+			}
+			break;
+		default:
+			pr_info("%s defalut\n", __func__);
+			break;
+		}
+	}
+	return NOTIFY_OK;
+}
+
+static struct notifier_block goodix_noti_block = {
+	.notifier_call = goodix_fb_state_chg_callback,
+};
+#elif defined(CONFIG_MSM_RDM_NOTIFY)
 static int goodix_fb_state_chg_callback(
 	struct notifier_block *nb, unsigned long val, void *data)
 {
@@ -617,7 +671,8 @@ static int goodix_fb_state_chg_callback(
 	struct drm_panel_notifier *evdata = data;
 	unsigned int blank;
 	char msg = 0;
-
+	pr_debug("[info] %s go to the msm_drm_notifier_callback value = %d\n",
+			__func__, (int)val);
 	if (val != DRM_PANEL_EARLY_EVENT_BLANK &&
 		val != DRM_PANEL_ONSCREENFINGERPRINT_EVENT)
 		return 0;
@@ -650,6 +705,7 @@ static int goodix_fb_state_chg_callback(
 			if (gf_dev->device_available == 1) {
 				gf_dev->fb_black = 1;
 				msg = GF_NET_EVENT_FB_BLACK;
+				pr_info("[%s] SCREEN OFF\n", __func__);
 				sendnlmsg(&msg);
 			}
 			gf_dev->screen_state = 0;
@@ -660,6 +716,7 @@ static int goodix_fb_state_chg_callback(
 			if (gf_dev->device_available == 1) {
 				gf_dev->fb_black = 0;
 				msg = GF_NET_EVENT_FB_UNBLACK;
+				pr_info("[%s] SCREEN ON\n", __func__);
 				sendnlmsg(&msg);
 			}
 			gf_dev->screen_state = 1;
@@ -733,33 +790,37 @@ static inline int gf_probe(struct platform_device *pdev)
 
 	if (fp_dtsi_product != 19805) {
 		status = gf_pinctrl_init(gf_dev);
-    if (status)
-	    goto err_irq;
-}
+	    if (status)
+		    goto err_irq;
+	}
 
 	if (get_boot_mode() != MSM_BOOT_MODE_FACTORY) {
 		if ((fp_dtsi_product != 19805) && (fp_dtsi_product != 20813)) {
 			status = pinctrl_select_state(gf_dev->gf_pinctrl,
 				gf_dev->gpio_state_enable);
 			if (status) {
+				pr_err("can not set %s pins\n", "fp_en_init");
 				goto error_hw;
 			}
 		} else {
 			status = gf_power_on(gf_dev);
 			if (status) {
+				pr_err("can not set regulator power on.\n");
 				goto error_hw;
 			}
 		}
 	} else {
-	if ((fp_dtsi_product != 19805) && (fp_dtsi_product != 20813)) {
+		if ((fp_dtsi_product != 19805) && (fp_dtsi_product != 20813)) {
 			status = pinctrl_select_state(gf_dev->gf_pinctrl,
 				gf_dev->gpio_state_disable);
 			if (status) {
+				pr_err("can not set %s pins\n", "fp_dis_init");
 				goto error_hw;
 			}
 		} else {
 			status = gf_power_off(gf_dev);
 			if (status) {
+				pr_err("can not set regulator power off.\n");
 				goto error_hw;
 			}
 		}
@@ -784,7 +845,12 @@ static inline int gf_probe(struct platform_device *pdev)
 	gf_dev->msm_drm_notif.notifier_call = goodix_fb_state_chg_callback;
 	if (lcd_active_panel) {
 		status = drm_panel_notifier_register(lcd_active_panel, &gf_dev->msm_drm_notif);
-	} else {
+		if (status) {
+			pr_err("Unable to register fb_notifier: %d\n", status);
+		}else{
+			pr_err("register notifier drm panel success!");
+		}
+	}else{
 		pr_err("Ooops!!! lcd_active_panel is null, unable to register fb_notifier!");
 	}
 

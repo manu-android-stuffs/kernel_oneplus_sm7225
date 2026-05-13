@@ -55,6 +55,9 @@
 
 #include "../fingerprint_detect/fingerprint_detect.h"
 
+#define NETLINK_TEST 25
+#define MAX_MSGSIZE 32
+
 #define VER_MAJOR   1
 #define VER_MINOR   2
 #define PATCH_LEVEL 8
@@ -607,62 +610,6 @@ int gf_opticalfp_irq_handler(int event)
 }
 EXPORT_SYMBOL(gf_opticalfp_irq_handler);
 
-#if defined(CONFIG_FB)
-static int goodix_fb_state_chg_callback(struct notifier_block *nb,
-		unsigned long val, void *data)
-{
-	struct gf_dev *gf_dev;
-	struct fb_event *evdata = data;
-	unsigned int blank;
-	char msg = 0;
-
-	if (val != FB_EARLY_EVENT_BLANK)
-		return 0;
-	pr_debug("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
-			__func__, (int)val);
-	gf_dev = container_of(nb, struct gf_dev, notifier);
-
-	if (evdata && evdata->data && val == FB_EARLY_EVENT_BLANK && gf_dev) {
-		blank = *(int *)(evdata->data);
-		switch (blank) {
-		case FB_BLANK_POWERDOWN:
-			if (gf_dev->device_available == 1) {
-				gf_dev->fb_black = 1;
-#if defined(GF_NETLINK_ENABLE)
-				msg = GF_NET_EVENT_FB_BLACK;
-				sendnlmsg(&msg);
-#elif defined (GF_FASYNC)
-				if (gf_dev->async) {
-					kill_fasync(&gf_dev->async, SIGIO, POLL_IN);
-				}
-#endif
-			}
-			break;
-		case FB_BLANK_UNBLANK:
-			if (gf_dev->device_available == 1) {
-				gf_dev->fb_black = 0;
-#if defined(GF_NETLINK_ENABLE)
-				msg = GF_NET_EVENT_FB_UNBLACK;
-				sendnlmsg(&msg);
-#elif defined (GF_FASYNC)
-				if (gf_dev->async) {
-					kill_fasync(&gf_dev->async, SIGIO, POLL_IN);
-				}
-#endif
-			}
-			break;
-		default:
-			pr_info("%s defalut\n", __func__);
-			break;
-		}
-	}
-	return NOTIFY_OK;
-}
-
-static struct notifier_block goodix_noti_block = {
-	.notifier_call = goodix_fb_state_chg_callback,
-};
-#elif defined(CONFIG_MSM_RDM_NOTIFY)
 static int goodix_fb_state_chg_callback(
 	struct notifier_block *nb, unsigned long val, void *data)
 {

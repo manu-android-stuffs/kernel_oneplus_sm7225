@@ -25,8 +25,6 @@ struct fp_underscreen_info {
     uint16_t x;
     uint16_t y;
 };
-<<<<<<< HEAD
-=======
 #define SUPPORT_NAV_EVENT
 
 #if defined(SUPPORT_NAV_EVENT)
@@ -40,7 +38,6 @@ struct fp_underscreen_info {
 #define GF_NAV_INPUT_F2 KEY_F2
 #define GF_NAV_INPUT_HEAVY		KEY_CHAT
 #endif
->>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 
 #define GF_KEY_INPUT_HOME		KEY_HOME
 #define GF_KEY_INPUT_MENU		KEY_MENU
@@ -120,17 +117,10 @@ struct gf_dev {
 
 	struct input_dev *input;
 	/* buffer is NULL unless this device is open (users > 0) */
-<<<<<<< HEAD
-	unsigned int users;
-	signed int irq_gpio;
-	signed int reset_gpio;
-	signed int pwr_gpio;
-=======
 	unsigned users;
 	signed irq_gpio;
 	signed reset_gpio;
 	signed pwr_gpio;
->>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 	int irq;
 	int irq_enabled;
 	int clk_enabled;
@@ -163,9 +153,5 @@ static inline void sendnlmsg_tp(struct fp_underscreen_info *msg, int length);
 static inline int netlink_init(void);
 static inline void netlink_exit(void);
 extern int gf_opticalfp_irq_handler(int event);
-<<<<<<< HEAD
-extern int opticalfp_irq_handler(struct fp_underscreen_info *tp_info);
-=======
 extern int opticalfp_irq_handler(struct fp_underscreen_info* tp_info);
->>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 #endif /*__GF_SPI_H*/

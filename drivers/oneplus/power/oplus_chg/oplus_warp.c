@@ -126,11 +126,7 @@ static bool oplus_warp_is_battemp_exit(void)
 		return false;
 }
 
-<<<<<<< HEAD
 void oplus_warp_battery_update(void)
-=======
-void oplus_warp_battery_update()
->>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 {
 	struct oplus_warp_chip *chip = g_warp_chip;
 /*
@@ -2681,11 +2677,7 @@ void oplus_warp_set_fastchg_to_warm_false(void)
 	}
 }
 
-<<<<<<< HEAD
 bool oplus_warp_get_fastchg_low_temp_full(void)
-=======
-bool oplus_warp_get_fastchg_low_temp_full()
->>>>>>> 5788a50ff1e7 (Checkout 'drivers/oneplus/' from commit abd739235bd933a20c745fbafab60e2f20301d8f)
 {
 	if (!g_warp_chip) {
 		return false;

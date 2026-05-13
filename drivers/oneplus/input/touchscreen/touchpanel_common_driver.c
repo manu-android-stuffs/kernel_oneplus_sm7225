@@ -5243,13 +5243,13 @@ int register_common_touch_device(struct touchpanel_data *pdata)
 	}
 	ts->reverse_charge_notif.notifier_call = reverse_charge_notifier_callback;
 	#ifndef CONFIG_TOUCHPANEL_GOODIX_GT9886
-	ret = register_reverse_charge_notifier(&ts->reverse_charge_notif);/*commented to make compilation successful for Android_R */
+	//ret = register_reverse_charge_notifier(&ts->reverse_charge_notif);/*commented to make compilation successful for Android_R */
 	if (ret)
 		TPD_INFO("unable to register severse_charge_notifier:%d\n", ret);
 	#endif
 	ts->tp_delta_print_notif.notifier_call = tp_delta_print_notifier_callback;
 	#ifndef CONFIG_TOUCHPANEL_GOODIX_GT9886
-	ret = register_tp_delta_print_notifier(&ts->tp_delta_print_notif);/*commented to make compilation successful for Android_R */
+	//ret = register_tp_delta_print_notifier(&ts->tp_delta_print_notif);/*commented to make compilation successful for Android_R */
 	if (ret)
 		TPD_INFO("unable to register tp_delta_print_notifier:%d\n", ret);
 	#endif

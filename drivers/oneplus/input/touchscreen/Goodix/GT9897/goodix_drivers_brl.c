@@ -7,6 +7,8 @@
  * Author    : bsp
  * TAG         : BSP.TP.Init
  ****************************************************************/
+#define __NO_FORTIFY
+
 #include <linux/module.h>
 #include <linux/ctype.h>
 #include "goodix_drivers_brl.h"

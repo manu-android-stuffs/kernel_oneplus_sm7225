@@ -1067,6 +1067,14 @@ include scripts/Makefile.kasan
 include scripts/Makefile.extrawarn
 include scripts/Makefile.ubsan
 
+# The oplus/qcom sources target clang 10: newer clang adds warnings (and turns
+# implicit-int & co. into errors) that the per-directory -Werror makes fatal.
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS	+= -Wno-error -Wno-error=strict-prototypes -Wno-error=implicit-int \
+		   -Wno-error=implicit-function-declaration -Wno-error=int-conversion \
+		   -Wno-error=incompatible-function-pointer-types
+endif
+
 # Add any arch overrides and user supplied CPPFLAGS, AFLAGS and CFLAGS as the
 # last assignments
 KBUILD_CPPFLAGS += $(ARCH_CPPFLAGS) $(KCPPFLAGS)

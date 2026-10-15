@@ -17,6 +17,11 @@
 
 -include oplus_native_features.mk
 
+# The oplus build exports OPLUS_FEATURE_*=yes from the Android environment and
+# the Kbuild sub-makes test them (e.g. drivers/scsi/ufs). Export them ourselves
+# so the tree builds outside the oplus build system.
+$(foreach v,$(filter OPLUS_%,$(.VARIABLES)),$(if $(filter yes,$($(v))),$(eval export $(v))))
+
 ###ifdef OPLUS_ARCH_INJECT
 OPLUS_CONNECTIVITY_NATIVE_FEATURE_SET :=
 

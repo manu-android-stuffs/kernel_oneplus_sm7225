@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Only the uapi headers of audio-kernel are imported here (for the audio HAL);
+# the audio drivers themselves are the stock vendor modules.

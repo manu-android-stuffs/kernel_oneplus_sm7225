@@ -1223,6 +1223,9 @@ static int __init proc_uid_sys_stats_init(void)
 		&uid_perf_fops, NULL);
 	uid_perf_add_thread = kthread_create(__uid_perf_add_work, NULL, "uid_add_thread");
 	uid_perf_remove_thread = kthread_create(__uid_perf_remove_work, NULL, "uid_remove_thread");
+	/* Let them reach their interruptible sleep instead of staying in D */
+	wake_up_process(uid_perf_add_thread);
+	wake_up_process(uid_perf_remove_thread);
 #endif
 
 	io_parent = proc_mkdir("uid_io", NULL);
